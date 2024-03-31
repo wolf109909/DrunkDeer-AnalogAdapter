@@ -4,7 +4,7 @@
 #include <Xinput.h>
 #include <atomic>
 #include <chrono>
-#include <cstdio> // printf
+#include <cstdio>
 #include <cstdlib>
 #include <hidapi.h>
 #include <iostream>
@@ -30,6 +30,7 @@ unsigned char g_key_height_array[128];
 XINPUT_STATE g_xinput_state;
 DWORD g_xinput_packet_count = 0;
 std::atomic_bool should_send = false;
+int g_current_keyboard_identifier = 0;
 
 // keyboard packet -> find in keycode2action map -> call action func
 
@@ -148,16 +149,18 @@ void load_function_map() {
       std::make_pair("RTrigger", pad_action_right_trigger_analog));
 }
 
-hid_device *open_target_device(struct hid_device_info *cur_dev) {
-  for (; cur_dev; cur_dev = cur_dev->next) {
-    if (cur_dev->vendor_id == 0x352D && cur_dev->product_id == 0x2383 &&
-        cur_dev->usage == 0x0) {
-      printf("Device found: %s\n", cur_dev->path);
-      return hid_open_path(cur_dev->path);
-    }
-  }
-}
 
+ hid_device *open_target_device(struct hid_device_info *cur_dev) {
+   for (; cur_dev; cur_dev = cur_dev->next) {
+     if (cur_dev->vendor_id == 0x352D &&
+         (cur_dev->product_id == 0x2383 || cur_dev->product_id == 0x2382 ||
+          cur_dev->product_id == 0x2384) &&
+         cur_dev->usage == 0x0) {
+       printf("Device found: %s\n", cur_dev->path);
+       return hid_open_path(cur_dev->path);
+     }
+   }
+ }
 
 
 void key_height_handler(uint8_t keycode, double travel) {
@@ -172,10 +175,77 @@ void key_height_handler(uint8_t keycode, double travel) {
   }
 }
 
+void keyboard_identity_handler(unsigned char byte5, unsigned char byte6,
+                               unsigned char byte7) {
+  if (((byte5 == 11) && (byte6 == 1) && (byte7 == 1)) ||
+      ((byte5 == 11) && (byte6 == 4) && (byte7 == 1))) {
+    g_current_keyboard_identifier = 75;
+  } else if ((byte5 == 11) && (byte6 == 4) && (byte7 == 3)) {
+    g_current_keyboard_identifier = 750;
+  } else if ((byte5 == 11) && (byte6 == 4) && (byte7 == 2)) {
+    int current_iso = 751; // Assume UK as default
+    if (current_iso == 751) {
+       g_current_keyboard_identifier = 751;
+    } else if (current_iso == 752) {
+       g_current_keyboard_identifier = 752;
+    } else if (current_iso == 753) {
+       g_current_keyboard_identifier = 753;
+    }
+  } else if (((byte5 == 11) && (byte6 == 2) && (byte7 == 1)) ||
+             ((byte5 == 15) && (byte6 == 1) && (byte7 == 1))) {
+    g_current_keyboard_identifier = 65;
+  } else if ((byte5 == 11) && (byte6 == 3) && (byte7 == 1)) {
+    g_current_keyboard_identifier = 60;
+  } else if ((byte5 == 11) && (byte6 == 4) && (byte7 == 1)) {
+    g_current_keyboard_identifier = 82;
+  } else {
+    g_current_keyboard_identifier = 0;
+  }
+}
+std::string get_keyboard_name_from_id(int keyboard_type) {
+  std::string keyboard_name;
+
+  switch (keyboard_type) {
+  case 75:
+    keyboard_name = "A75";
+    break;
+  case 750:
+    keyboard_name = "A75Pro";
+    break;
+  case 751:
+    keyboard_name = "A75 IOS - UK";
+    break;
+  case 752:
+    keyboard_name = "A75 IOS - FR";
+    break;
+  case 753:
+    keyboard_name = "A75 IOS - DE";
+    break;
+  case 65:
+    keyboard_name = "G65";
+    break;
+  case 60:
+    keyboard_name = "G60";
+    break;
+  case 82:
+    keyboard_name = "K82";
+    break;
+  default:
+    keyboard_name = "Unknown Keyboard";
+    break;
+  }
+
+  return keyboard_name;
+}
 // packet functions
 int sendpkt_request_keys() {
   const unsigned char buf[4] = {0x04, 0xb6, 0x03, 0x01};
   return hid_write(g_hid_device_handle, buf, 4);
+}
+
+int sendpkt_request_identity() {
+  const unsigned char buf[3] = {0x04, 0xa0, 0x02};
+  return hid_write(g_hid_device_handle, buf, 3);
 }
 
 /*
@@ -207,7 +277,17 @@ void receive_packet_controller(PVIGEM_CLIENT client, PVIGEM_TARGET pad,
   unsigned char byte7 = buffer[7];
 
 
-  
+    if(command == 0xa0){
+    if (byte2 == 0x02 && byte3 == 0x00) {
+        // keyboard respond identify command
+       keyboard_identity_handler(byte5, byte6, byte7);
+       
+       spdlog::info("Connected to keyboard: {}",
+           get_keyboard_name_from_id(g_current_keyboard_identifier));
+       return;
+          
+    }
+    }
 
   
 
@@ -238,10 +318,10 @@ void receive_packet_controller(PVIGEM_CLIENT client, PVIGEM_TARGET pad,
       new_value = 0;
     }
     double p = new_value / 40.0;
-    /*if (int(new_value) >= 10) {
-      std::cout << "key: " << keynum << "(" << keyboard_layout_a75[keynum] << ")"
+    if (int(new_value) >= 10) {
+        std::cout << "key: " << keynum << "(" << keyboard_layout_a75[keynum] << ")"
                 << " , height: " << int(new_value) << std::endl;
-    }*/
+    }
         
     key_height_handler(keynum, p);
     
@@ -448,6 +528,11 @@ int main(int argc, char *argv[]) {
   // End of Configuration file init
   // ===============================================
 
+  // check keyboard identifier
+  if (g_current_keyboard_identifier == 0) {
+    sendpkt_request_identity();
+  }
+      
   // initial packet used to trigger the loop
   sendpkt_request_keys();
 
@@ -472,7 +557,8 @@ int main(int argc, char *argv[]) {
       printf("Unable to read(): %ls\n", hid_error(g_hid_device_handle));
       break;
     } else if (res > 0) {
-     /* receive_packet_controller(client, pad, hid_readbuffer);
+     receive_packet_controller(client, pad, hid_readbuffer);
+      /*
       conout.setpos(0, 10);
       std::cout << "sThumbLX:  " << g_xinput_state.Gamepad.sThumbLX
                 << "        ";
