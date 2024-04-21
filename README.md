@@ -1,8 +1,7 @@
 # DrunkDeer-AnalogAdapter
  - A simple app that emulates an xbox360 controller, redirecting analog readings from drunkdeer keyboards.
 # Supported Keyboards
- - Currently, only the DrunkDeer A75(Original model) is supported. (I only own this one myself)
- - Support for other drunkdeer keyboard models coming up soon!
+ - It should support all DrunkDeer keyboards now!
 # QuickStart
  - Download the latest ViGEmBus driver from https://github.com/nefarius/ViGEmBus/releases
  - Download latest release from github. (Releases should be on your right)
