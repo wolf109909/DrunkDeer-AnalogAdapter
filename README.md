@@ -29,6 +29,7 @@
 "u28","u29","u30","ALT_R","FN1","APP","","ARR_L",
 "ARR_DW","ARR_R","CTRL_R","u31","u32","u33","u34" ```
  - Available analog actions: ```"LStickX+","LStickX-","LStickY+","LStickY-","RStickX+","RStickX-","RStickY+","RStickY-","LTrigger","RTrigger" ```
+ - DeadZones are now exposed to json file for easy access. Simply just edit the number for `DeadZoneMin` and `DeadZoneMax` to change the Corresponding deadzones.
 # Todo
 - Digital button mapping
 # Development
