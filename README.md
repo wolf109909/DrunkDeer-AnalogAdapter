@@ -30,6 +30,7 @@
 "ARR_DW","ARR_R","CTRL_R","u31","u32","u33","u34" ```
  - Available analog actions: ```"LStickX+","LStickX-","LStickY+","LStickY-","RStickX+","RStickX-","RStickY+","RStickY-","LTrigger","RTrigger" ```
  - DeadZones are now exposed to json file for easy access. Simply just edit the number for `DeadZoneMin` and `DeadZoneMax` to change the Corresponding deadzones.
+ - PollingInterval is now exposed to json file for easy access. Edit the number for `PollingInterval` in milliseconds (bigger the number slower the update) for the polling speed you want.
 # Todo
 - Digital button mapping
 # Development
