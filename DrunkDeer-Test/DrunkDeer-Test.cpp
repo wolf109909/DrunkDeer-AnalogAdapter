@@ -73,48 +73,40 @@ std::vector<std::string> keyboard_layout_a75 = {
     "",          "ARR_L",  "ARR_DW",  "ARR_R",  "CTRL_R", "u31",     "u32",
     "u33",       "u34"};
 
-void pad_action_leftstick_x_positive(double percent,
-                                     bool inverse) {
+void pad_action_leftstick_x_positive(double percent, bool inverse) {
 
   g_xinput_state.Gamepad.sThumbLX += scale<SHORT>(percent * 0.5 + 0.5);
 }
 
-void pad_action_leftstick_x_negative(double percent,
-                                     bool inverse) {
+void pad_action_leftstick_x_negative(double percent, bool inverse) {
 
   g_xinput_state.Gamepad.sThumbLX += -scale<SHORT>(percent * 0.5 + 0.5);
 }
 
-void pad_action_leftstick_y_positive(double percent,
-                                     bool inverse) {
+void pad_action_leftstick_y_positive(double percent, bool inverse) {
   g_xinput_state.Gamepad.sThumbLY += scale<SHORT>(percent * 0.5 + 0.5);
 }
 
-void pad_action_leftstick_y_negative(double percent,
-                                     bool inverse) {
-  
+void pad_action_leftstick_y_negative(double percent, bool inverse) {
+
   g_xinput_state.Gamepad.sThumbLY += -scale<SHORT>(percent * 0.5 + 0.5);
 }
 
-void pad_action_rightstick_x_positive(double percent,
-                                      bool inverse) {
+void pad_action_rightstick_x_positive(double percent, bool inverse) {
   g_xinput_state.Gamepad.sThumbRX += scale<SHORT>(percent * 0.5 + 0.5);
 }
 
-void pad_action_rightstick_x_negative(double percent,
-                                      bool inverse) {
+void pad_action_rightstick_x_negative(double percent, bool inverse) {
 
   g_xinput_state.Gamepad.sThumbRX += -scale<SHORT>(percent * 0.5 + 0.5);
 }
 
-void pad_action_rightstick_y_positive(double percent,
-                                      bool inverse) {
+void pad_action_rightstick_y_positive(double percent, bool inverse) {
 
   g_xinput_state.Gamepad.sThumbRY += scale<SHORT>(percent * 0.5 + 0.5);
 }
 
-void pad_action_rightstick_y_negative(double percent,
-                                      bool inverse) {
+void pad_action_rightstick_y_negative(double percent, bool inverse) {
 
   g_xinput_state.Gamepad.sThumbRY += -scale<SHORT>(percent * 0.5 + 0.5);
 }
@@ -123,8 +115,7 @@ void pad_action_left_trigger_analog(double percent, bool inverse) {
   g_xinput_state.Gamepad.bLeftTrigger = scale<BYTE>(percent);
 }
 
-void pad_action_right_trigger_analog(double percent,
-                                     bool inverse) {
+void pad_action_right_trigger_analog(double percent, bool inverse) {
   g_xinput_state.Gamepad.bRightTrigger = scale<BYTE>(percent);
 }
 
@@ -168,12 +159,12 @@ void key_height_handler(uint8_t keycode, double travel) {
   auto &action = g_key_action_map[keycode];
   if (action.f != nullptr) {
     action.f(travel, action.inverse);
-    //if (travel > 0.2f)
-      //spdlog::info("key: {} , height: {}, action: {:p}", keycode, travel,
-      //             (void*) & action);
+    // if (travel > 0.2f)
+    // spdlog::info("key: {} , height: {}, action: {:p}", keycode, travel,
+    //              (void*) & action);
   } else {
-    //spdlog::error("Action function pointer for key:{} is invalid!",
-    //             keyboard_layout_a75[keycode]);
+    // spdlog::error("Action function pointer for key:{} is invalid!",
+    //              keyboard_layout_a75[keycode]);
   }
 }
 
@@ -200,6 +191,8 @@ void keyboard_identity_handler(unsigned char byte5, unsigned char byte6,
     g_current_keyboard_identifier = 60;
   } else if ((byte5 == 11) && (byte6 == 4) && (byte7 == 1)) {
     g_current_keyboard_identifier = 82;
+  } else if ((byte5 == 11) && (byte6 == 4) && (byte7 == 5)) {
+    g_current_keyboard_identifier = 754;
   } else {
     g_current_keyboard_identifier = 0;
   }
@@ -208,6 +201,7 @@ std::string get_keyboard_name_from_id(int keyboard_type) {
   std::string keyboard_name;
 
   switch (keyboard_type) {
+
   case 75:
     keyboard_name = "A75";
     break;
@@ -222,6 +216,9 @@ std::string get_keyboard_name_from_id(int keyboard_type) {
     break;
   case 753:
     keyboard_name = "A75 ISO - DE";
+    break;
+  case 754:
+    keyboard_name = "G75";
     break;
   case 65:
     keyboard_name = "G65";
@@ -328,7 +325,7 @@ void receive_packet_controller(PVIGEM_CLIENT client, PVIGEM_TARGET pad,
     key_height_handler(keynum, p);
   }
   if (byte4 != 0x00 && byte4 != 0x01) {
-    //spdlog::info("update: {}", g_xinput_state.Gamepad.sThumbLY);
+    // spdlog::info("update: {}", g_xinput_state.Gamepad.sThumbLY);
     vigem_target_x360_update(
         client, pad, *reinterpret_cast<XUSB_REPORT *>(&g_xinput_state.Gamepad));
     g_xinput_state.Gamepad.sThumbLX = 0;
@@ -443,27 +440,27 @@ void register_key_action(std::string keyname, std::string padname,
 
 void initialize_action_map(nlohmann::json config) {
   try {
-      g_polling_interval = config.at("PollingInterval");
-      g_deadzone_min = config.at("DeadZoneMin");
-      g_deadzone_max = config.at("DeadZoneMax");
-      spdlog::info("Active deadzones: 0-{}, {}-40", g_deadzone_min, g_deadzone_max);
-      for (const auto &item : config["ActionMaps"]) {
-        std::string key = item["Key"];
-        std::string action = item["Action"];
-        bool invert = item.at("Invert");
-        register_key_action(key, action, invert);
-      }
+    g_polling_interval = config.at("PollingInterval");
+    g_deadzone_min = config.at("DeadZoneMin");
+    g_deadzone_max = config.at("DeadZoneMax");
+    spdlog::info("Active deadzones: 0-{}, {}-40", g_deadzone_min,
+                 g_deadzone_max);
+    for (const auto &item : config["ActionMaps"]) {
+      std::string key = item["Key"];
+      std::string action = item["Action"];
+      bool invert = item.at("Invert");
+      register_key_action(key, action, invert);
+    }
   } catch (const nlohmann::json::type_error &e) {
     spdlog::error("Error while loading configuration file! Details: {}",
                   e.what());
-                
   }
-  register_key_action("W", "LStickY+",false);
+  register_key_action("W", "LStickY+", false);
   register_key_action("ARR_DW", "LStickY-", false);
   register_key_action("ARR_R", "RStickX+", false);
   register_key_action("ARR_L", "RStickX-", false);
-  //register_key_action("W", "RTrigger", false);
-  //register_key_action("S", "LTrigger", false);
+  // register_key_action("W", "RTrigger", false);
+  // register_key_action("S", "LTrigger", false);
 }
 
 int main(int argc, char *argv[]) {
@@ -547,7 +544,8 @@ int main(int argc, char *argv[]) {
     while (true) {
       if (should_send.load()) {
         sendpkt_request_keys();
-        std::this_thread::sleep_for(std::chrono::milliseconds(g_polling_interval));
+        std::this_thread::sleep_for(
+            std::chrono::milliseconds(g_polling_interval));
       }
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
@@ -565,29 +563,27 @@ int main(int argc, char *argv[]) {
     } else if (res > 0) {
 
       if (g_current_keyboard_identifier != 0) {
-        //conout.setpos(0, 20);
-        //std::cout << "sThumbLX:  " << g_xinput_state.Gamepad.sThumbLX
-        //          << "        ";
-        //conout.setpos(0, 21);
-        //std::cout << "sThumbLY:  " << g_xinput_state.Gamepad.sThumbLY
-        //          << "        ";
-        //conout.setpos(0, 22);
-        //std::cout << "sThumbRX:  " << g_xinput_state.Gamepad.sThumbRX
-        //          << "        ";
-        //conout.setpos(0, 23);
-        //std::cout << "sThumbRY:  " << g_xinput_state.Gamepad.sThumbRY
-        //          << "        ";
-        //conout.setpos(0, 24);
-        //std::cout << "bLeftTrigger:  "
-        //          << int(g_xinput_state.Gamepad.bLeftTrigger) << "        ";
-        //conout.setpos(0, 25);
-        //std::cout << "bRightTrigger: "
-        //          << int(g_xinput_state.Gamepad.bRightTrigger) << "        ";
+        // conout.setpos(0, 20);
+        // std::cout << "sThumbLX:  " << g_xinput_state.Gamepad.sThumbLX
+        //           << "        ";
+        // conout.setpos(0, 21);
+        // std::cout << "sThumbLY:  " << g_xinput_state.Gamepad.sThumbLY
+        //           << "        ";
+        // conout.setpos(0, 22);
+        // std::cout << "sThumbRX:  " << g_xinput_state.Gamepad.sThumbRX
+        //           << "        ";
+        // conout.setpos(0, 23);
+        // std::cout << "sThumbRY:  " << g_xinput_state.Gamepad.sThumbRY
+        //           << "        ";
+        // conout.setpos(0, 24);
+        // std::cout << "bLeftTrigger:  "
+        //           << int(g_xinput_state.Gamepad.bLeftTrigger) << "        ";
+        // conout.setpos(0, 25);
+        // std::cout << "bRightTrigger: "
+        //           << int(g_xinput_state.Gamepad.bRightTrigger) << "        ";
       }
 
       receive_packet_controller(client, pad, hid_readbuffer);
-      
-      
     }
   }
 
