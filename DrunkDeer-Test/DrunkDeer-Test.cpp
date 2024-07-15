@@ -316,11 +316,11 @@ void receive_packet_controller(PVIGEM_CLIENT client, PVIGEM_TARGET pad,
       new_value = 40;
     }
     double p = new_value / 40.0;
-    if (int(new_value) >= 10) {
+  /*  if (int(new_value) >= 10) {
       std::cout << "key: " << keynum << "(" << keyboard_layout_a75[keynum]
                 << ")"
                 << " , height: " << int(new_value) << std::endl;
-    }
+    }*/
 
     key_height_handler(keynum, p);
   }
@@ -455,10 +455,10 @@ void initialize_action_map(nlohmann::json config) {
     spdlog::error("Error while loading configuration file! Details: {}",
                   e.what());
   }
-  register_key_action("W", "LStickY+", false);
-  register_key_action("ARR_DW", "LStickY-", false);
-  register_key_action("ARR_R", "RStickX+", false);
-  register_key_action("ARR_L", "RStickX-", false);
+  //register_key_action("W", "LStickY+", false);
+  //register_key_action("ARR_DW", "LStickY-", false);
+  //register_key_action("ARR_R", "RStickX+", false);
+  //register_key_action("ARR_L", "RStickX-", false);
   // register_key_action("W", "RTrigger", false);
   // register_key_action("S", "LTrigger", false);
 }
