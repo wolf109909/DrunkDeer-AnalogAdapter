@@ -311,9 +311,10 @@ void receive_packet_controller(PVIGEM_CLIENT client, PVIGEM_TARGET pad,
     unsigned char new_value = buffer[i + 4];
     if (new_value < g_deadzone_min) {
       new_value = 0;
-    }
-    if (new_value > g_deadzone_max) {
+    } else if (new_value > g_deadzone_max) {
       new_value = 40;
+    } else {
+      new_value = (new_value - g_deadzone_min) * (40 / (g_deadzone_max - g_deadzone_min));
     }
     double p = new_value / 40.0;
   /*  if (int(new_value) >= 10) {
